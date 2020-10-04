@@ -3,6 +3,7 @@
 -- github : https://github.com/edisonslightbulbs
 -- created: 2020-09-2020 17:59
 
+-- essential defaults
 import XMonad
 import System.Exit
 import XMonad.Hooks.ManageDocks
@@ -10,21 +11,23 @@ import XMonad.Util.Run
 import XMonad.Util.SpawnOnce
 import Data.Monoid
 import XMonad.Layout.Spacing
-
 import qualified XMonad.StackSet as W
 import qualified Data.Map        as M
 
-
--- screen-workspace management
+-- for managing screen-workspaces
 import qualified XMonad.Actions.DynamicWorkspaceOrder as DO
 import XMonad.Layout.IndependentScreens
 import XMonad.Actions.CycleWS
 
--- dynamic logging for xmobar
+-- for dynamic logging for xmobar
 import XMonad.Hooks.DynamicLog
 
--- fading window
+-- for fading windows
 import XMonad.Hooks.FadeInactive (fadeInactiveLogHook)
+
+-- for sound keys
+import Graphics.X11.ExtraTypes.XF86
+
 
 -- ESSENTIALS:
 -----------------------------------------------------------------------------
@@ -132,6 +135,13 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
 
     -- reset current workspace layout to default
     , ((modm .|. shiftMask, xK_space), setLayout $ XMonad.layoutHook conf)
+
+
+    , ((0, xF86XK_AudioMute), spawn "pactl set-sink-mute @DEFAULT_SINK@ toggle")
+    , ((0, xF86XK_AudioLowerVolume), spawn "pactl set-sink-volume @DEFAULT_SINK@ -10%")
+    , ((0, xF86XK_AudioRaiseVolume), spawn "pactl set-sink-volume @DEFAULT_SINK@ +10%")
+
+
     ]
     ++
 
@@ -174,7 +184,7 @@ myManageHook = composeAll
     , resource  =? "kdesktop"       --> doIgnore ]
 
 myFadeHook = do
-    fadeInactiveLogHook 0.6
+    fadeInactiveLogHook 0.8
 
 -- ON STARTUP:
 -----------------------------------------------------------------------------
