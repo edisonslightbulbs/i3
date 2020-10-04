@@ -10,17 +10,37 @@ import XMonad.Util.Run
 import XMonad.Util.SpawnOnce
 import Data.Monoid
 import XMonad.Layout.Spacing
-import XMonad.Layout.IndependentScreens
 
 import qualified XMonad.StackSet as W
 import qualified Data.Map        as M
 
+
+-- screen-workspace management
 import qualified XMonad.Actions.DynamicWorkspaceOrder as DO
+import XMonad.Layout.IndependentScreens
 import XMonad.Actions.CycleWS
+
+-- dynamic logging for xmobar
 import XMonad.Hooks.DynamicLog
 
+-- fading window
+import XMonad.Hooks.FadeInactive (fadeInactiveLogHook)
 
--- INTERFACE:
+-- ESSENTIALS:
+-----------------------------------------------------------------------------
+myTerminal           = "tilix"
+myModMask            = mod4Mask
+myWorkspaces         = ["1","2","3","4","5","6","7","8","9"]
+
+
+-- THEME:
+-----------------------------------------------------------------------------
+myBorderWidth        = 1
+myNormalBorderColor  ="#CACFD2"
+myFocusedBorderColor ="#8E44AD"
+
+
+-- MOUSE ACTIONS:
 -----------------------------------------------------------------------------
 myClickJustFocuses   :: Bool
 myFocusFollowsMouse  :: Bool
@@ -28,18 +48,6 @@ myFocusFollowsMouse  :: Bool
 myClickJustFocuses   = False
 myFocusFollowsMouse  = True
 
-myTerminal           = "tilix"
-myModMask            = mod4Mask
-
-myBorderWidth        = 1
-myNormalBorderColor  ="#CACFD2"
-myFocusedBorderColor ="#8E44AD"
-
-myWorkspaces         = ["1","2","3","4","5","6","7","8","9"]
-
-
--- MOUSE ACTIONS:
------------------------------------------------------------------------------
 myMouseBindings (XConfig {XMonad.modMask = modm}) = M.fromList $
 
     -- mod-button1, Set the window to floating mode and move by dragging
@@ -127,7 +135,7 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     ]
     ++
 
-    --  SCREEN WORKSPACE CONFIG:
+    --  SCREEN-WORKSPACE CONFIG:
     ----------------------------
     -- single monitor config
     [((m .|. modm, k), windows $ f i)
@@ -143,7 +151,7 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
 
     -- switching screens 1,2,3 with mod + {w,e,r}
     [((m .|. modm, key), screenWorkspace sc >>= flip whenJust (windows . f))
-        | (key, sc) <- zip [xK_w, xK_e, xK_2] [0..] -- match screen order here
+        | (key, sc) <- zip [xK_w, xK_e, xK_0] [0..] -- match screen order here
         , (f, m) <- [(W.view, 0), (W.shift, shiftMask)]]
 
 
@@ -165,11 +173,14 @@ myManageHook = composeAll
     , resource  =? "desktop_window" --> doIgnore
     , resource  =? "kdesktop"       --> doIgnore ]
 
+myFadeHook = do
+    fadeInactiveLogHook 0.6
 
 -- ON STARTUP:
 -----------------------------------------------------------------------------
 myStartupHook = do
     --spawnOnce "$HOME/.xmonad/util/screen-config.sh &"
+    spawnOnce "$HOME/.xmonad/util/xcompmgr.sh &"
     spawnOnce "compton -f &"
     spawnOnce "nitrogen --restore &"
 
@@ -177,13 +188,18 @@ myStartupHook = do
 -- STATUS BAR:
 -----------------------------------------------------------------------------
 myBar = "xmobar"
-myPP  = xmobarPP { ppCurrent = xmobarColor "#979A9A" "" . wrap "[" "]" }
+
+myPP  = xmobarPP {
+    ppCurrent = xmobarColor "#979A9A" "" . wrap "[" "]",
+    ppTitle   = xmobarColor "#979A9A" "" . shorten 100
+}
 
 toggleStrutsKey XConfig {XMonad.modMask = modMask} = (modMask, xK_b)
 
 
 -- MAIN:
 -----------------------------------------------------------------------------
+
 main = do
     xmonad =<< statusBar myBar myPP toggleStrutsKey defaults
 
@@ -198,13 +214,11 @@ defaults = def {
         focusedBorderColor = myFocusedBorderColor,
         keys               = myKeys,
         mouseBindings      = myMouseBindings,
+        -- hooks --
         layoutHook         = myLayout,
         manageHook         = myManageHook,
-        startupHook        = myStartupHook
+        startupHook        = myStartupHook,
+        logHook            = myFadeHook
     }
------------------------------------------------------------------------------
 
--- main = do
---     -- xmproc <- spawnPipe "xmobar -x 0 ~/.config/xmobar/xmobar-0.config"
---     xmproc <- spawnPipe "xmobar"
---     xmonad $ docks defaults
+-----------------------------------------------------------------------------
