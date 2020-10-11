@@ -28,6 +28,17 @@ import XMonad.Hooks.FadeInactive (fadeInactiveLogHook)
 -- for sound keys
 import Graphics.X11.ExtraTypes.XF86
 
+-- for border-less windows
+import XMonad.Layout.NoBorders
+
+-- for finding the number of X11 screens
+import Graphics.X11.Xinerama (getScreenInfo)
+
+-- for dynamic handling of xmobar
+import XMonad.Hooks.DynamicBars
+
+-- for handing full screen modes from web browsers
+import XMonad.Hooks.EwmhDesktops
 
 -- ESSENTIALS:
 -----------------------------------------------------------------------------
@@ -38,7 +49,7 @@ myWorkspaces         = ["1","2","3","4","5","6","7","8","9"]
 
 -- THEME:
 -----------------------------------------------------------------------------
-myBorderWidth        = 1
+myBorderWidth        = 0
 myNormalBorderColor  ="#CACFD2"
 myFocusedBorderColor ="#8E44AD"
 
@@ -136,43 +147,51 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     -- reset current workspace layout to default
     , ((modm .|. shiftMask, xK_space), setLayout $ XMonad.layoutHook conf)
 
+    -- toggle the status bar gap
+    , ((modm, xK_b), sendMessage ToggleStruts)
 
+    -- sound keys
     , ((0, xF86XK_AudioMute), spawn "pactl set-sink-mute @DEFAULT_SINK@ toggle")
     , ((0, xF86XK_AudioLowerVolume), spawn "pactl set-sink-volume @DEFAULT_SINK@ -10%")
     , ((0, xF86XK_AudioRaiseVolume), spawn "pactl set-sink-volume @DEFAULT_SINK@ +10%")
-
-
     ]
     ++
 
-    --  SCREEN-WORKSPACE CONFIG:
-    ----------------------------
-    -- single monitor config
-    [((m .|. modm, k), windows $ f i)
-        | (i, k) <- zip (XMonad.workspaces conf) [xK_1 .. xK_9]
-        , (f, m) <- [(W.greedyView, 0), (W.shift, shiftMask)]]
-    ++
-
-    -- -- multi-monitor config
-    -- [((m .|. modm, k), windows $ onCurrentScreen f i)
-    --     | (i, k) <- zip (workspaces' conf) [xK_1 .. xK_9]
+    --  SINGLE MONITOR-WORKSPACE CONFIG:
+    ------------------------------------
+    -- [((m .|. modm, k), windows $ f i)
+    --     | (i, k) <- zip (XMonad.workspaces conf) [xK_1 .. xK_9]
     --     , (f, m) <- [(W.greedyView, 0), (W.shift, shiftMask)]]
     -- ++
 
-    -- switching screens 1,2,3 with mod + {w,e,r}
+    -- [((m .|. modm, key), screenWorkspace sc >>= flip whenJust (windows . f))
+    --     | (key, sc) <- zip [xK_w, xK_e, xK_0] [0..]
+    --     , (f, m) <- [(W.view, 0), (W.shift, shiftMask)]]
+
+
+    --  DOUBLE MONITOR-WORKSPACE CONFIG:
+    ------------------------------------
+    [((m .|. modm, k), windows $ onCurrentScreen f i)
+        | (i, k) <- zip (workspaces' conf) [xK_1 .. xK_9]
+        , (f, m) <- [(W.greedyView, 0), (W.shift, shiftMask)]]
+    ++
+
+    -- switch screens 1 and 2 using mod + [<] and [>]
     [((m .|. modm, key), screenWorkspace sc >>= flip whenJust (windows . f))
-        | (key, sc) <- zip [xK_w, xK_e, xK_0] [0..] -- match screen order here
+        | (key, sc) <- zip [xK_period, xK_comma] [1, 0]
         , (f, m) <- [(W.view, 0), (W.shift, shiftMask)]]
+
 
 
 -- LAYOUT:
 -----------------------------------------------------------------------------
-myLayout = avoidStruts (tiled ||| Mirror tiled ||| Full)
-  where
-     tiled   = spacingRaw True (Border 5 5 5 5) True (Border 5 5 5 5) True $ layoutHook def
-     nmaster = 1
-     ratio   = 1/2
-     delta   = 3/100
+myLayout = avoidStruts $ noBorders $ tiled ||| Mirror tiled ||| Full
+
+   where
+      tiled   = spacingRaw True (Border 5 5 5 5) True (Border 5 5 5 5) True $ layoutHook def
+      nmaster = 1
+      ratio   = 1/2
+      delta   = 3/100
 
 
 -- WINDOW RULES:
@@ -184,36 +203,25 @@ myManageHook = composeAll
     , resource  =? "kdesktop"       --> doIgnore ]
 
 myFadeHook = do
-    fadeInactiveLogHook 0.8
+    fadeInactiveLogHook 0.7
 
 -- ON STARTUP:
 -----------------------------------------------------------------------------
 myStartupHook = do
-    --spawnOnce "$HOME/.xmonad/util/screen-config.sh &"
-    spawnOnce "$HOME/.xmonad/util/xcompmgr.sh &"
-    spawnOnce "compton -f &"
-    spawnOnce "nitrogen --restore &"
-
-
--- STATUS BAR:
------------------------------------------------------------------------------
-myBar = "xmobar"
-
-myPP  = xmobarPP {
-    ppCurrent = xmobarColor "#979A9A" "" . wrap "[" "]",
-    ppTitle   = xmobarColor "#979A9A" "" . shorten 100
-}
-
-toggleStrutsKey XConfig {XMonad.modMask = modMask} = (modMask, xK_b)
+    spawnOnce "$HOME/.xmonad/util/display_manager.sh &"
 
 
 -- MAIN:
 -----------------------------------------------------------------------------
 
 main = do
-    xmonad =<< statusBar myBar myPP toggleStrutsKey defaults
+    -- unique instances of xmobar
+    xmobarScreenOne <- spawnPipe "xmobar -x 0"
+    xmobarScreenTwo <- spawnPipe "xmobar -x 1"
 
-defaults = def {
+    xmonad $ docks def {
+    --xmonad $ def {
+
         terminal           = myTerminal,
         focusFollowsMouse  = myFocusFollowsMouse,
         clickJustFocuses   = myClickJustFocuses,
@@ -224,11 +232,21 @@ defaults = def {
         focusedBorderColor = myFocusedBorderColor,
         keys               = myKeys,
         mouseBindings      = myMouseBindings,
+
         -- hooks --
         layoutHook         = myLayout,
         manageHook         = myManageHook,
         startupHook        = myStartupHook,
-        logHook            = myFadeHook
+        handleEventHook    = fullscreenEventHook,
+
+        logHook            = composeAll [
+            myFadeHook,
+            dynamicLogWithPP xmobarPP {
+                ppOutput   = \x -> hPutStrLn xmobarScreenOne x  >> hPutStrLn xmobarScreenTwo x,
+                ppCurrent  = xmobarColor "#979A9A" "" . wrap "" "",
+                ppTitle    = xmobarColor "#979A9A" "" . shorten 100
+            }
+        ]
     }
 
 -----------------------------------------------------------------------------
