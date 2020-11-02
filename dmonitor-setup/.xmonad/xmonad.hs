@@ -40,6 +40,9 @@ import XMonad.Hooks.DynamicBars
 -- for handing full screen modes from web browsers
 import XMonad.Hooks.EwmhDesktops
 
+-- for cursor
+import XMonad.Util.Cursor
+
 -- ESSENTIALS:
 -----------------------------------------------------------------------------
 myTerminal           = "tilix"
@@ -209,6 +212,8 @@ myFadeHook = do
 -----------------------------------------------------------------------------
 myStartupHook = do
     spawnOnce "$HOME/.xmonad/util/layout.sh &"
+    spawnOnce "redshift &"
+    setDefaultCursor xC_left_ptr
 
 
 -- MAIN:
