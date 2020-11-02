@@ -208,7 +208,7 @@ myFadeHook = do
 -- ON STARTUP:
 -----------------------------------------------------------------------------
 myStartupHook = do
-    spawnOnce "$HOME/.xmonad/util/display_manager.sh &"
+    spawnOnce "$HOME/.xmonad/util/layout.sh &"
 
 
 -- MAIN:
