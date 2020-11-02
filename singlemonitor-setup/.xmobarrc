@@ -1,0 +1,78 @@
+Config {
+   -- appearance
+     font     = "xft:FiraCode Nerd Font:size=12:bold:antialias=true"
+   , bgColor  = "black"
+   , fgColor  = "#424949"
+   , position = Top
+
+   -- layout
+   , sepChar  = "%"   -- delineator between plugin names and straight text
+   , alignSep = "}{"  -- separator between left-right alignment
+
+   , template = "  %StdinReader%  %memory%  %dynnetwork%}{%date%   "
+   --, template = "  %memory%  %dynnetwork%}{%date%   "
+
+   -- general behavior
+   , lowerOnStart =     False   -- send to bottom of window stack on start
+   , hideOnStart =      False   -- start with window unmapped (hidden)
+   , allDesktops =      True    -- show on all desktops
+   , overrideRedirect = True    -- set the Override Redirect flag (Xlib)
+   , pickBroadest =     False   -- choose widest display (multi-monitor)
+   , persistent =       True    -- enable/disable hiding (True = disabled)
+
+   -- PLUGINS:
+   --   The --template option controls how the plugin is displayed.
+   --   Text color can be set by enclosing in <fc></fc> tags.
+   --   see http://projects.haskell.org/xmobar/#system-monitor-plugins.
+
+   , commands =
+        [
+        -- cpu activity monitor
+        Run MultiCpu       [ "--template" , " <total0>% <total1>%"
+                             , "--Low"      , "50"         -- units: %
+                             , "--High"     , "85"         -- units: %
+                             , "--low"      , "darkgreen"
+                             , "--normal"   , "darkorange"
+                             , "--high"     , "darkred"
+                             ] 10
+
+        -- cpu core temperature monitor
+        , Run CoreTemp       [ "--template" , "Temp: <core0>°C|<core1>°C"
+                             , "--Low"      , "70"        -- units: °C
+                             , "--High"     , "80"        -- units: °C
+                             , "--low"      , "darkgreen"
+                             , "--normal"   , "darkorange"
+                             , "--high"     , "darkred"
+                             ] 50
+
+        -- network activity monitor (dynamic interface resolution)
+        , Run DynNetwork     [ "--template" , " <tx>kB/s   <rx>kB/s"
+                             , "--Low"      , "1000"       -- units: B/s
+                             , "--High"     , "5000"       -- units: B/s
+                             , "--low"      , "#424949"
+                             , "--normal"   , "#424949"
+                             , "--high"     , "#424949"
+                             ] 10
+
+        -- memory usage monitor
+        , Run Memory         [ "--template" ," <usedratio>%"
+                             , "--Low"      , "20"        -- units: %
+                             , "--High"     , "90"        -- units: %
+                             , "--low"      , "#424949"
+                             , "--normal"   , "#424949"
+                             , "--high"     , "darkred"
+                             ] 10
+
+        -- time and date indicator
+        --   (%F = y-m-d date, %a = day of week, %T = h:m:s time)
+        , Run Date           "<fc=#ABABAB>%d %a %T</fc>" "date" 10
+
+        -- workspaces
+        , Run StdinReader
+
+        -- keyboard layout indicator
+        , Run Kbd            [ ("us(dvorak)" , "<fc=#00008B>DV</fc>")
+                             , ("us"         , "<fc=#8B0000>US</fc>")
+                             ]
+        ]
+   }
