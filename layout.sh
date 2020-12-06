@@ -12,6 +12,7 @@ xrandr --output HDMI-0 --primary --mode 3440x1440 --pos 0x0 --rotate normal --ou
 
 # -- manage wallpaper
 nitrogen --restore &
+sleep 0.2
 
 
 # -- manage transitions and transparency effects

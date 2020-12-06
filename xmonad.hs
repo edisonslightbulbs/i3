@@ -40,6 +40,12 @@ import XMonad.Hooks.DynamicBars
 -- for handing full screen modes from web browsers
 import XMonad.Hooks.EwmhDesktops
 
+-- for cursor
+import XMonad.Util.Cursor
+
+-- for java swing applications
+import XMonad.Hooks.SetWMName
+
 -- ESSENTIALS:
 -----------------------------------------------------------------------------
 myTerminal           = "tilix"
@@ -157,15 +163,28 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     ]
     ++
 
-   --  SINGLE MONITOR-WORKSPACE CONFIG:
-   ----------------------------------
-    [((m .|. modm, k), windows $ f i)
-        | (i, k) <- zip (XMonad.workspaces conf) [xK_1 .. xK_9]
+    --  SINGLE MONITOR-WORKSPACE CONFIG:
+    ------------------------------------
+    -- [((m .|. modm, k), windows $ f i)
+    --     | (i, k) <- zip (XMonad.workspaces conf) [xK_1 .. xK_9]
+    --     , (f, m) <- [(W.greedyView, 0), (W.shift, shiftMask)]]
+    -- ++
+
+    -- [((m .|. modm, key), screenWorkspace sc >>= flip whenJust (windows . f))
+    --     | (key, sc) <- zip [xK_w, xK_e, xK_0] [0..]
+    --     , (f, m) <- [(W.view, 0), (W.shift, shiftMask)]]
+
+
+    --  DOUBLE MONITOR-WORKSPACE CONFIG:
+    ------------------------------------
+    [((m .|. modm, k), windows $ onCurrentScreen f i)
+        | (i, k) <- zip (workspaces' conf) [xK_1 .. xK_9]
         , (f, m) <- [(W.greedyView, 0), (W.shift, shiftMask)]]
     ++
 
+    -- switch screens 1 and 2 using mod + [<] and [>]
     [((m .|. modm, key), screenWorkspace sc >>= flip whenJust (windows . f))
-        | (key, sc) <- zip [xK_w, xK_e, xK_0] [0..]
+        | (key, sc) <- zip [xK_period, xK_comma] [1, 0]
         , (f, m) <- [(W.view, 0), (W.shift, shiftMask)]]
 
 
@@ -195,7 +214,10 @@ myFadeHook = do
 -- ON STARTUP:
 -----------------------------------------------------------------------------
 myStartupHook = do
-    spawnOnce "$HOME/.xmonad/util/display_manager.sh &"
+    spawnOnce "$HOME/.xmonad/util/layout.sh &"
+    spawnOnce "redshift &"
+    setDefaultCursor xC_left_ptr
+    setWMName "LG3D"
 
 
 -- MAIN:
@@ -204,6 +226,7 @@ myStartupHook = do
 main = do
     -- unique instances of xmobar
     xmobarScreenOne <- spawnPipe "xmobar -x 0"
+    xmobarScreenTwo <- spawnPipe "xmobar -x 1"
 
     xmonad $ docks def {
     --xmonad $ def {
@@ -228,7 +251,7 @@ main = do
         logHook            = composeAll [
             myFadeHook,
             dynamicLogWithPP xmobarPP {
-                ppOutput   = \x -> hPutStrLn xmobarScreenOne x,
+                ppOutput   = \x -> hPutStrLn xmobarScreenOne x  >> hPutStrLn xmobarScreenTwo x,
                 ppCurrent  = xmobarColor "#979A9A" "" . wrap "" "",
                 ppTitle    = xmobarColor "#979A9A" "" . shorten 100
             }
