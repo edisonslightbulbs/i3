@@ -124,10 +124,10 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     , ((modm, xK_j), windows W.focusDown)
 
     -- clockwise cycle through windows
-    , ((modm, xK_l), windows W.focusDown)
+    , ((modm, xK_h), windows W.focusDown)
 
     -- focus master
-    , ((modm, xK_h), windows W.focusMaster)
+    , ((modm, xK_l), windows W.focusMaster)
 
     -- swap focused window with master window
     , ((modm,xK_Return), windows W.swapMaster)
