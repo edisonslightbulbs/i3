@@ -46,6 +46,9 @@ import XMonad.Util.Cursor
 -- for java swing applications
 import XMonad.Hooks.SetWMName
 
+-- for flipping the layout
+import XMonad.Layout.Reflect
+
 -- ESSENTIALS:
 -----------------------------------------------------------------------------
 myTerminal           = "tilix"
@@ -243,7 +246,7 @@ main = do
         mouseBindings      = myMouseBindings,
 
         -- hooks --
-        layoutHook         = myLayout,
+        layoutHook         = reflectHoriz myLayout,
         manageHook         = myManageHook,
         startupHook        = myStartupHook,
         handleEventHook    = fullscreenEventHook,
