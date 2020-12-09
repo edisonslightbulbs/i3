@@ -145,10 +145,10 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     , ((modm, xK_n), refresh)
 
     --  increase master area size
-    , ((modm .|. shiftMask, xK_h), sendMessage Shrink)
+    , ((modm .|. shiftMask, xK_l), sendMessage Shrink)
 
     --  decrease master area size
-    , ((modm .|. shiftMask, xK_l), sendMessage Expand)
+    , ((modm .|. shiftMask, xK_h), sendMessage Expand)
 
     -- rotate through layout algorithms
     , ((modm, xK_Tab), sendMessage NextLayout)
